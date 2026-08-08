@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "ditto-claude-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "ditto-assistant/ditto-claude-plugins"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "ditto@ditto-claude-plugins": true
+  }
+}
