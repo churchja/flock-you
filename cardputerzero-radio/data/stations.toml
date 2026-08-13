@@ -1,0 +1,124 @@
+# CardputerZero Radio - station list
+#
+# This file is copied to ~/.config/cardputerzero-radio/stations.toml on first
+# run and is never rewritten by the app, so your edits and comments survive
+# upgrades.  Stations you save from the in-app search land in saved.json
+# instead.
+#
+# Each entry needs a name and url; everything else is cosmetic.
+#
+#   [[station]]
+#   name    = "My Station"
+#   url     = "https://example.com/stream.mp3"
+#   genre   = "talk"
+#   country = "US"
+#   codec   = "MP3"        # picks the recording file extension
+#   bitrate = 128
+
+[[station]]
+name = "SomaFM Groove Salad"
+url = "https://ice1.somafm.com/groovesalad-128-mp3"
+genre = "downtempo"
+country = "US"
+codec = "MP3"
+bitrate = 128
+homepage = "https://somafm.com/groovesalad/"
+
+[[station]]
+name = "SomaFM Drone Zone"
+url = "https://ice1.somafm.com/dronezone-128-mp3"
+genre = "ambient"
+country = "US"
+codec = "MP3"
+bitrate = 128
+homepage = "https://somafm.com/dronezone/"
+
+[[station]]
+name = "SomaFM DEF CON Radio"
+url = "https://ice1.somafm.com/defcon-128-mp3"
+genre = "electronic"
+country = "US"
+codec = "MP3"
+bitrate = 128
+homepage = "https://somafm.com/defcon/"
+
+[[station]]
+name = "SomaFM Secret Agent"
+url = "https://ice1.somafm.com/secretagent-128-mp3"
+genre = "lounge"
+country = "US"
+codec = "MP3"
+bitrate = 128
+homepage = "https://somafm.com/secretagent/"
+
+[[station]]
+name = "SomaFM Deep Space One"
+url = "https://ice1.somafm.com/deepspaceone-128-mp3"
+genre = "ambient"
+country = "US"
+codec = "MP3"
+bitrate = 128
+homepage = "https://somafm.com/deepspaceone/"
+
+[[station]]
+name = "SomaFM Lush"
+url = "https://ice1.somafm.com/lush-128-mp3"
+genre = "vocal"
+country = "US"
+codec = "MP3"
+bitrate = 128
+homepage = "https://somafm.com/lush/"
+
+[[station]]
+name = "Radio Paradise Main Mix"
+url = "https://stream.radioparadise.com/mp3-192"
+genre = "eclectic"
+country = "US"
+codec = "MP3"
+bitrate = 192
+homepage = "https://radioparadise.com/"
+
+[[station]]
+name = "Radio Paradise Mellow Mix"
+url = "https://stream.radioparadise.com/mellow-192"
+genre = "mellow"
+country = "US"
+codec = "MP3"
+bitrate = 192
+homepage = "https://radioparadise.com/"
+
+[[station]]
+name = "KEXP Seattle"
+url = "https://kexp.streamguys1.com/kexp128.mp3"
+genre = "indie"
+country = "US"
+codec = "MP3"
+bitrate = 128
+homepage = "https://kexp.org/"
+
+[[station]]
+name = "WFMU Freeform"
+url = "https://stream0.wfmu.org/freeform-128k"
+genre = "freeform"
+country = "US"
+codec = "MP3"
+bitrate = 128
+homepage = "https://wfmu.org/"
+
+[[station]]
+name = "FIP"
+url = "https://icecast.radiofrance.fr/fip-midfi.mp3"
+genre = "eclectic"
+country = "FR"
+codec = "MP3"
+bitrate = 128
+homepage = "https://www.radiofrance.fr/fip"
+
+[[station]]
+name = "FIP Groove"
+url = "https://icecast.radiofrance.fr/fipgroove-midfi.mp3"
+genre = "funk"
+country = "FR"
+codec = "MP3"
+bitrate = 128
+homepage = "https://www.radiofrance.fr/fip/radio-groove"

@@ -1,0 +1,76 @@
+name: build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        # evdev is device-only; the tests deliberately do not need it.
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install Pillow numpy
+          sudo apt-get update
+          sudo apt-get install -y fonts-dejavu-core
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Render smoke frames
+        run: python app.py --smoke frames
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screens
+          path: frames/
+
+  package:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: python -m pip install Pillow
+
+      - name: Build .deb
+        run: |
+          chmod +x packaging/build-deb.sh
+          DEB_REVISION="${GITHUB_RUN_NUMBER}" packaging/build-deb.sh
+
+      - name: Verify package installs cleanly
+        # Cheap sanity check that the archive is well formed and the paths
+        # match the APPLaunch layout the launcher expects.
+        run: |
+          deb=$(ls dist/*.deb)
+          dpkg-deb --info "$deb"
+          dpkg-deb --contents "$deb" | grep -q 'usr/share/APPLaunch/apps/cardputerzero-radio/app.py'
+          dpkg-deb --contents "$deb" | grep -q 'usr/share/APPLaunch/bin/cardputerzero-radio'
+          dpkg-deb --contents "$deb" | grep -q 'usr/share/APPLaunch/applications/cardputerzero-radio.desktop'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb
+          path: dist/*.deb
+
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${GITHUB_REF_NAME}" dist/*.deb --generate-notes || gh release upload "${GITHUB_REF_NAME}" dist/*.deb --clobber

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Radio
+Comment=Internet radio for CardputerZero
+Exec=/usr/share/APPLaunch/bin/cardputerzero-radio
+Terminal=false
+Icon=share/images/cardputerzero-radio.png
+Type=Application
+Categories=AudioVideo;Audio;Player;

@@ -1,0 +1,14 @@
+[Unit]
+Description=CardputerZero Radio
+Documentation=https://github.com/churchja/cardputerzero-radio
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/share/APPLaunch/bin/cardputerzero-radio
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
