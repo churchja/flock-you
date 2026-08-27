@@ -22,27 +22,27 @@ pio device monitor             # serial console (115200)
 python -m venv .venv
 .venv/bin/pip install -r api/requirements-dev.txt
 
-cd api && ../.venv/bin/python flockyou.py   # dashboard — run from api/, see below
-.venv/bin/python -m pytest                  # tests — run from the repo root
+.venv/bin/python api/flockyou.py   # dashboard — any working directory
+.venv/bin/python -m pytest         # tests — run from the repo root
 ```
 
-**Launch the dashboard from `api/`, not the repo root.** `export_csv` builds its output
-path relative to the current working directory, but Flask's `send_file` resolves it
-against `app.root_path` (`api/`). The two agree only when the CWD is `api/`; launch from
-anywhere else and every CSV/KML export writes successfully but fails to download.
-`api/tests/test_export_paths.py` pins both halves of this.
+Exports are written under `app.root_path` (`api/exports/`) rather than the working
+directory, so the dashboard can be launched from anywhere. `data/` is still resolved
+relative to the CWD, so run the app from a consistent place if you want one cumulative
+store — see `api/tests/test_export_paths.py`.
 
 ## Tests
 
-`pytest` covers the dashboard only — 30 tests over NMEA parsing, OUI lookup, and the
-CSV export/import round-trip. The firmware has none: `main.cpp` is one Arduino
-translation unit, so testing it needs either the detection predicates extracted behind a
-natively-compilable seam or hardware-in-the-loop via `pio test`.
+`pytest` covers the dashboard only — 33 tests over NMEA parsing, OUI lookup, the CSV
+export/import round-trip, and export path resolution. The firmware has none: `main.cpp`
+is one Arduino translation unit, so testing it needs either the detection predicates
+extracted behind a natively-compilable seam or hardware-in-the-loop via `pio test`.
 
-Five tests are `xfail(strict=True)` — they encode known bugs (the CSV round-trip drops
-`ssid`, `channel` and `detection_count`, rewrites `protocol` to `bluetooth_le`; exports
-break when the CWD isn't `api/`). Strict means fixing a bug turns its xfail into a
-failing XPASS. That is the signal to promote it to a plain assertion, not to delete it.
+Four of these tests began as `xfail(strict=True)` recording real defects in the CSV
+round-trip; all four are fixed and the assertions now hold the line. If you add a test
+for a bug you are not fixing yet, use `xfail(strict=True)` — fixing the bug then turns
+the test into a failing XPASS, which is the prompt to promote it to a plain assertion
+rather than let it rot.
 
 ## Agent skills
 

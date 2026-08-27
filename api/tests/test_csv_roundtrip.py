@@ -1,12 +1,12 @@
 """Export -> import round-trip for the CSV surface.
 
-`/api/export/csv` writes 25 columns; `/api/import/csv` reads back a subset. These
-tests pin down which fields actually survive a round-trip and which are silently
-dropped or rewritten.
+`/api/export/csv` writes 25 columns and `/api/import/csv` reads them back. These
+tests pin down which fields survive that round-trip.
 
-The dropped ones are recorded as strict xfails rather than left untested: if
-someone fixes the import side, the xfail turns into an XPASS and fails the run,
-which is the prompt to promote it to a real assertion.
+Four of them started life as strict xfails recording real defects — `protocol`
+was hardcoded to `bluetooth_le`, `ssid` and `channel` were written but never
+read, and `detection_count` was reset to 1 on every new record. All four are
+fixed; the assertions below are what keeps them fixed.
 """
 
 import io
@@ -16,7 +16,7 @@ import pytest
 # A WiFi detection shaped the way the firmware emits them.
 DETECTION = {
     "mac_address": "82:6B:F2:11:22:33",
-    "protocol": "wifi",
+    "protocol": "wifi_2_4ghz",
     "detection_method": "wifi_oui_addr2",
     "ssid": "FlockSafety-Cam",
     "device_name": "flock-cam",
@@ -102,42 +102,39 @@ def test_gps_coordinates_survive(reimported):
     assert reimported["gps"]["longitude"] == pytest.approx(DETECTION["gps"]["longitude"])
 
 
-# --- fields that do not survive ----------------------------------------------
-
-
-@pytest.mark.xfail(
-    strict=True,
-    reason="import_csv hardcodes protocol='bluetooth_le', so WiFi detections "
-    "come back mislabelled as BLE",
-)
 def test_protocol_survives(reimported):
-    assert reimported["protocol"] == "wifi"
+    """A WiFi detection must not come back relabelled as BLE."""
+    assert reimported["protocol"] == DETECTION["protocol"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="export writes an ssid column but import never reads it, so the SSID "
-    "is lost on re-import",
-)
 def test_ssid_survives(reimported):
-    assert reimported.get("ssid") == DETECTION["ssid"]
+    """The SSID is load-bearing — a zero-length one is the wildcard-probe tell."""
+    assert reimported["ssid"] == DETECTION["ssid"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="add_detection_from_serial resets detection_count to 1 for any new "
-    "record, discarding the count parsed from the CSV",
-)
+def test_channel_survives(reimported):
+    assert reimported["channel"] == DETECTION["channel"]
+
+
 def test_detection_count_survives(reimported):
+    """An imported count is a real observation total, not a fresh sighting."""
     assert reimported["detection_count"] == DETECTION["detection_count"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="export writes a channel column but import never reads it",
-)
-def test_channel_survives(reimported):
-    assert reimported.get("channel") == DETECTION["channel"]
+def test_legacy_exports_without_a_protocol_column_still_import_as_ble(
+    client, app_module
+):
+    """Older ESP32 BLE exports carry no protocol column and must keep defaulting."""
+    legacy_csv = b"mac,name,rssi,count\n" b"AA:BB:CC:DD:EE:FF,old-device,-70,3\n"
+
+    response = client.post(
+        "/api/import/csv",
+        data={"file": (io.BytesIO(legacy_csv), "legacy.csv")},
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 200
+    assert app_module.detections[0]["protocol"] == "bluetooth_le"
 
 
 # --- deduplication behaviour --------------------------------------------------
@@ -146,7 +143,11 @@ def test_channel_survives(reimported):
 def test_reimporting_the_same_mac_increments_rather_than_duplicates(
     client, app_module, reimported
 ):
-    """A second import of the same MAC updates the existing record."""
+    """A second import of the same MAC updates the existing record.
+
+    This is an increment, not a merge: re-importing the same file adds one more
+    sighting on top of the stored count, so importing twice is not idempotent.
+    """
     exported = client.get("/api/export/csv?type=session")
     assert exported.status_code == 200
 
@@ -158,4 +159,7 @@ def test_reimporting_the_same_mac_increments_rather_than_duplicates(
     assert response.status_code == 200
 
     assert len(app_module.detections) == 1
-    assert app_module.detections[0]["detection_count"] == 2
+    assert (
+        app_module.detections[0]["detection_count"]
+        == DETECTION["detection_count"] + 1
+    )

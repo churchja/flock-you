@@ -482,7 +482,10 @@ def add_detection_from_serial(data):
         data['id'] = next_detection_id
         next_detection_id += 1
         data['alias'] = ''  # Empty alias by default
-        data['detection_count'] = 1
+        # Serial detections arrive one frame at a time and carry no count, so
+        # they default to 1. Imports (CSV/JSON/KML) parse a count out of the
+        # file and it must survive rather than being reset.
+        data['detection_count'] = data.get('detection_count', 1)
         data['first_seen'] = datetime.now().isoformat()
         data['last_seen'] = datetime.now().isoformat()
         
@@ -826,10 +829,13 @@ def export_csv():
         return jsonify({'status': 'error', 'message': 'No detections to export'}), 400
     
     filename = f"{filename_prefix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    filepath = os.path.join('exports', filename)
-    
-    os.makedirs('exports', exist_ok=True)
-    
+    # Anchor to app.root_path, not the CWD: send_file resolves relative paths
+    # against root_path, so a CWD-relative path breaks the download whenever the
+    # app is launched from anywhere other than this directory.
+    exports_dir = os.path.join(app.root_path, 'exports')
+    os.makedirs(exports_dir, exist_ok=True)
+    filepath = os.path.join(exports_dir, filename)
+
     with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = [
             'timestamp', 'detection_time', 'server_timestamp', 'protocol', 'detection_method',
@@ -891,10 +897,11 @@ def export_kml():
         return jsonify({'status': 'error', 'message': 'No detections to export'}), 400
     
     filename = f"{filename_prefix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.kml"
-    filepath = os.path.join('exports', filename)
-    
-    os.makedirs('exports', exist_ok=True)
-    
+    # Anchor to app.root_path, not the CWD — see the note in export_csv.
+    exports_dir = os.path.join(app.root_path, 'exports')
+    os.makedirs(exports_dir, exist_ok=True)
+    filepath = os.path.join(exports_dir, filename)
+
     kml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2">
 <Document>
@@ -1059,12 +1066,23 @@ def import_csv():
         for row in reader:
             data = {
                 'detection_method': row.get('method', row.get('detection_method', 'unknown')),
-                'protocol': 'bluetooth_le',
+                # Legacy ESP32 BLE exports have no protocol column; honour the
+                # column when it exists so WiFi detections don't come back
+                # relabelled as BLE.
+                'protocol': row.get('protocol') or 'bluetooth_le',
                 'mac_address': row.get('mac', row.get('mac_address', '')),
                 'device_name': row.get('name', row.get('device_name', '')),
+                'ssid': row.get('ssid', ''),
                 'rssi': int(row.get('rssi', 0)) if row.get('rssi') else 0,
                 'detection_count': int(row.get('count', row.get('detection_count', 1))) if row.get('count', row.get('detection_count')) else 1,
             }
+
+            channel_str = row.get('channel', '')
+            if channel_str:
+                try:
+                    data['channel'] = int(channel_str)
+                except (ValueError, TypeError):
+                    pass  # Leave channel unset if the column is malformed
 
             # Raven fields
             is_raven = row.get('is_raven', row.get('raven', 'false'))
