@@ -19,12 +19,30 @@ pio run -e xiao_esp32s3        # build firmware
 pio run -t upload              # flash
 pio device monitor             # serial console (115200)
 
-pip install -r api/requirements.txt
-python api/flockyou.py         # dashboard
+python -m venv .venv
+.venv/bin/pip install -r api/requirements-dev.txt
+
+cd api && ../.venv/bin/python flockyou.py   # dashboard — run from api/, see below
+.venv/bin/python -m pytest                  # tests — run from the repo root
 ```
 
-There is no test suite yet. `/tdd` and `/diagnosing-bugs` will need one stood up before
-their red-green-refactor loops can run.
+**Launch the dashboard from `api/`, not the repo root.** `export_csv` builds its output
+path relative to the current working directory, but Flask's `send_file` resolves it
+against `app.root_path` (`api/`). The two agree only when the CWD is `api/`; launch from
+anywhere else and every CSV/KML export writes successfully but fails to download.
+`api/tests/test_export_paths.py` pins both halves of this.
+
+## Tests
+
+`pytest` covers the dashboard only — 30 tests over NMEA parsing, OUI lookup, and the
+CSV export/import round-trip. The firmware has none: `main.cpp` is one Arduino
+translation unit, so testing it needs either the detection predicates extracted behind a
+natively-compilable seam or hardware-in-the-loop via `pio test`.
+
+Five tests are `xfail(strict=True)` — they encode known bugs (the CSV round-trip drops
+`ssid`, `channel` and `detection_count`, rewrites `protocol` to `bluetooth_le`; exports
+break when the CWD isn't `api/`). Strict means fixing a bug turns its xfail into a
+failing XPASS. That is the signal to promote it to a plain assertion, not to delete it.
 
 ## Agent skills
 

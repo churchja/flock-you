@@ -14,6 +14,13 @@ When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the 
 
 Edit the right-hand column to match whatever vocabulary you actually use.
 
-> **Note:** These labels do not yet exist in `churchja/flock-you` on GitHub. They are
-> created on first use — `gh label create <name>`, or let `gh issue edit --add-label`
-> fail once and create the label before retrying.
+> **Note:** As of 2026-08-27, only `wontfix` exists in `churchja/flock-you` — it ships as
+> a GitHub default and already matches the canonical role, so it needs no mapping. The
+> other four do not exist yet and must be created before `/triage` can apply them:
+>
+> ```bash
+> gh label create needs-triage    --description "Maintainer needs to evaluate this issue"  --color d93f0b
+> gh label create needs-info      --description "Waiting on reporter for more information" --color fbca04
+> gh label create ready-for-agent --description "Fully specified, ready for an AFK agent"  --color 0e8a16
+> gh label create ready-for-human --description "Requires human implementation"            --color 1d76db
+> ```

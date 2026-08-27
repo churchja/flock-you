@@ -4,3 +4,13 @@
 .vscode/
 
 .DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Dashboard runtime output (paths are relative to wherever the app is launched)
+data/
+exports/
