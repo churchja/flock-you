@@ -4,3 +4,9 @@
 .vscode/
 
 .DS_Store
+
+.env
+
+.env.local
+
+.firecrawl/
